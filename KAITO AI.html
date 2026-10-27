@@ -1,0 +1,697 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>KAITO AI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: une colonne de chat sur fond bleu nuit quadrillé, en-tête collant avec les modes (chaque mode a sa couleur), compositeur collant en bas. */
+:root {
+  --bg: #040a1e;
+  --surface: #0c1a45;
+  --surface-2: #112458;
+  --line: rgba(128, 170, 255, 0.2);
+  --fg: #eaf1ff;
+  --fg-2: #aebfe8;
+  --muted: #7388bb;
+  --blue: #3b82ff;
+  --cyan: #22d3ee;
+  --violet: #8b5cf6;
+  --pink: #f472b6;
+  --mint: #34e0a1;
+  --amber: #ffc24b;
+  --coral: #ff5d73;
+  --mode: #4f9dff;
+  --font-display: 'Unbounded', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.5 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 30; background: var(--bg);
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--mode); outline-offset: 2px; }
+
+/* Fond */
+.bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+  background: linear-gradient(180deg, #040a1e, #06123a 60%, #050d2c); }
+.orb { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; opacity: .6;
+  animation: drift 26s ease-in-out infinite alternate; }
+.o1 { left: -28vmax; top: -34vmax; background: radial-gradient(circle, rgba(59,130,255,.6), transparent 62%); }
+.o2 { right: -34vmax; top: -12vmax; background: radial-gradient(circle, rgba(34,211,238,.34), transparent 62%); animation-delay: -8s; }
+.o3 { right: -24vmax; bottom: -38vmax; background: radial-gradient(circle, rgba(139,92,246,.42), transparent 62%); animation-delay: -14s; }
+.o4 { left: -30vmax; bottom: -30vmax; background: radial-gradient(circle, rgba(244,114,182,.22), transparent 62%); animation-delay: -4s; }
+.bg::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(130,170,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(130,170,255,.07) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 25%, transparent 80%);
+  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 25%, transparent 80%);
+}
+@keyframes drift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(5vmax, 4vmax, 0) scale(1.12); } }
+
+.app { position: relative; z-index: 1; min-height: 100%; display: flex; flex-direction: column; }
+.wrap { width: 100%; max-width: 900px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* En-tête */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: rgba(4,10,30,.84); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line); }
+.top-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px 10px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mark { width: 34px; height: 34px; flex: none; filter: drop-shadow(0 4px 14px rgba(59,130,255,.55)); }
+.word { font: 800 1.1rem/1 var(--font-display); letter-spacing: .06em; }
+.ai { font: 700 .66rem/1 var(--font-display); padding: 5px 7px; border-radius: 7px; color: #04112e;
+  background: linear-gradient(120deg, var(--cyan), var(--blue) 55%, var(--violet)); }
+.top-r { display: flex; align-items: center; gap: 8px; }
+.status { display: inline-flex; align-items: center; gap: 7px; font-size: .76rem; color: var(--fg-2);
+  padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: rgba(12,26,69,.6); white-space: nowrap; }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
+.status[data-s="ok"] i { background: var(--mint); animation: pulse 2.4s infinite; }
+.status[data-s="off"] i { background: var(--coral); }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52,224,161,.6); } 70% { box-shadow: 0 0 0 8px rgba(52,224,161,0); } 100% { box-shadow: 0 0 0 0 rgba(52,224,161,0); } }
+.ghost { border: 1px solid var(--line); background: rgba(12,26,69,.6); border-radius: 999px; padding: 6px 12px;
+  font-size: .8rem; font-weight: 600; color: var(--fg); cursor: pointer; white-space: nowrap; }
+.ghost:hover { border-color: var(--mode); }
+
+.modes { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.modes::-webkit-scrollbar { display: none; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: 999px;
+  border: 1px solid var(--line); background: rgba(12,26,69,.55); color: var(--fg-2);
+  font-weight: 600; font-size: .86rem; cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
+.chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
+.chip:hover { border-color: var(--c); color: var(--fg); }
+.chip[aria-pressed="true"] { color: #fff; border-color: var(--c); background: rgba(30,60,140,.6);
+  background: color-mix(in srgb, var(--c) 24%, rgba(8,16,44,.92)); }
+
+/* Accueil */
+.main { flex: 1; }
+.welcome { padding-block: 28px 12px; }
+.eyebrow { font: 600 .72rem/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--cyan); margin: 0 0 14px; }
+h1 { font: 800 clamp(2rem, 8.6vw, 3.6rem)/1.06 var(--font-display); letter-spacing: -.02em; margin: 0 0 14px; text-wrap: balance; }
+.grad { background: linear-gradient(95deg, var(--cyan), var(--blue) 40%, var(--violet) 70%, var(--pink));
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { color: var(--fg-2); font-size: 1.05rem; max-width: 56ch; margin: 0 0 22px; }
+.feats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; list-style: none; padding: 0; margin: 0 0 28px; }
+.feats li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: 14px; background: rgba(12,26,69,.5); min-width: 0; }
+.fi { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--c);
+  background: rgba(40,80,180,.3); background: color-mix(in srgb, var(--c) 18%, transparent); }
+.fi svg { width: 20px; height: 20px; }
+.feats b { display: block; font-size: .94rem; }
+.feats span { display: block; font-size: .83rem; color: var(--fg-2); line-height: 1.4; }
+.sect { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font: 700 .76rem/1 var(--font-mono);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+.sect em { font-style: normal; color: #04112e; background: var(--mode); border-radius: 6px; padding: 4px 8px; }
+.starters { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.st { text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; cursor: pointer;
+  border: 1px solid var(--line); background: rgba(12,26,69,.6); transition: transform .15s, border-color .15s, background .15s; min-width: 0; }
+.st:hover { transform: translateY(-2px); border-color: var(--mode); background: rgba(17,36,88,.8); }
+.st-tag { font: 600 .68rem/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mode); }
+.st-txt { font-size: .95rem; line-height: 1.4; }
+.consent { margin: 18px 0 0; font-size: .82rem; color: var(--muted); max-width: 60ch; }
+
+/* Conversation */
+.log { display: flex; flex-direction: column; gap: 18px; padding-block: 20px 8px; }
+.msg { display: flex; gap: 10px; min-width: 0; animation: rise .25s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.msg.user { justify-content: flex-end; }
+.bubble { max-width: min(86%, 640px); padding: 11px 15px; border-radius: 18px 18px 6px 18px; color: #fff;
+  background: linear-gradient(135deg, #2b66ff, #2347d8 60%, #4b3fe0); box-shadow: 0 8px 24px rgba(37,99,235,.35);
+  white-space: pre-wrap; overflow-wrap: anywhere; }
+.av { flex: none; width: 32px; height: 32px; }
+.av .mark { width: 32px; height: 32px; }
+.ai-body { min-width: 0; flex: 1; }
+.prose { background: rgba(12,26,69,.74); border: 1px solid var(--line); border-radius: 6px 18px 18px 18px;
+  padding: 14px 16px; font-size: .98rem; line-height: 1.68; overflow-wrap: anywhere; }
+.prose > * + * { margin-top: .8em; }
+.prose p { margin: 0; }
+.prose > * + * { margin-bottom: 0; }
+.prose h2, .prose h3, .prose h4, .prose h5 { font: 700 1.02rem/1.35 var(--font-body); color: #fff; margin-bottom: 0; }
+.prose h2 { font-size: 1.12rem; color: var(--mode); }
+.prose ul, .prose ol { margin: 0; padding-left: 1.3em; }
+.prose li + li { margin-top: .3em; }
+.prose strong { color: #fff; }
+.prose :not(pre) > code { font: 500 .86em var(--font-mono); background: rgba(59,130,255,.18); color: #c4e1ff; padding: 2px 6px; border-radius: 6px; }
+.prose blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid var(--mode); color: var(--fg-2); }
+.prose hr { border: 0; height: 1px; background: var(--line); margin: 1em 0; }
+.code { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #030818; }
+.code-head { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 6px 12px;
+  background: rgba(17,36,88,.7); border-bottom: 1px solid var(--line);
+  font: 600 .7rem/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mode); }
+.code pre { margin: 0; padding: 12px 14px; overflow-x: auto; }
+.code code { font: 400 .84rem/1.6 var(--font-mono); color: #d6e4ff; white-space: pre; }
+.t-k { color: #ff7ab8; } .t-s { color: #7ee7a8; } .t-n { color: #ffc56b; } .t-c { color: #6d82b8; font-style: italic; } .t-f { color: #6fd3ff; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.mini { border: 1px solid var(--line); background: rgba(12,26,69,.6); border-radius: 8px; padding: 5px 10px;
+  font: 600 .74rem/1 var(--font-body); color: var(--fg-2); cursor: pointer; }
+.mini:hover { color: var(--fg); border-color: var(--mode); }
+.note { margin-top: 8px; font-size: .84rem; color: var(--amber); }
+.notice { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 11px 14px; border-radius: 12px; font-size: .92rem;
+  border: 1px solid rgba(255,194,75,.4); background: rgba(255,194,75,.1); color: #ffe3a3; }
+.notice.err { border-color: rgba(255,93,115,.45); background: rgba(255,93,115,.1); color: #ffc6cf; }
+.divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font: 600 .7rem/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.divider span { color: var(--mode); }
+.think { display: flex; align-items: center; gap: 6px; color: var(--fg-2); font-size: .92rem; }
+.think i { width: 7px; height: 7px; border-radius: 50%; background: var(--mode); animation: dot 1.2s infinite ease-in-out; }
+.think i:nth-child(2) { animation-delay: .15s; } .think i:nth-child(3) { animation-delay: .3s; }
+.think span { margin-left: 6px; }
+@keyframes dot { 0%, 80%, 100% { transform: scale(.6); opacity: .4; } 40% { transform: scale(1); opacity: 1; } }
+#end { height: 1px; scroll-margin-bottom: calc(var(--comp-h, 140px) + 12px); }
+
+/* Compositeur */
+.composer { position: sticky; bottom: 0; z-index: 15; padding-top: 18px; padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(4,10,30,.97) 72%, rgba(4,10,30,0)); }
+.depth-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.depth { display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; background: rgba(12,26,69,.85); border: 1px solid var(--line); }
+.depth button { border: 0; background: transparent; padding: 6px 12px; border-radius: 9px; font-weight: 600; font-size: .8rem; color: var(--fg-2); cursor: pointer; }
+.depth button[aria-checked="true"] { background: var(--mode); color: #03112b; }
+.hint { font-size: .76rem; color: var(--muted); }
+.field { display: flex; align-items: flex-end; gap: 10px; }
+textarea { flex: 1; min-width: 0; resize: none; max-height: 160px; padding: 13px 16px; border-radius: 18px;
+  border: 1px solid var(--line); background: rgba(12,26,69,.94); color: var(--fg); font: inherit; font-size: 16px; line-height: 1.4; }
+textarea::placeholder { color: var(--muted); }
+textarea:focus { outline: none; border-color: var(--mode); box-shadow: 0 0 0 3px rgba(79,157,255,.25); }
+textarea:disabled { opacity: .6; }
+.send { flex: none; width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; color: #03112b;
+  background: linear-gradient(135deg, var(--mode), #6d4cff); box-shadow: 0 8px 22px rgba(59,130,255,.4); }
+.send:disabled { opacity: .45; cursor: default; }
+.send svg { width: 22px; height: 22px; }
+.fine { margin: 8px 0 0; text-align: center; font-size: .72rem; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="kg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#3b82ff"/><stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <symbol id="kmark" viewBox="0 0 40 40">
+      <rect width="40" height="40" rx="11" fill="url(#kg)"/>
+      <path d="M14 10v20M26 11L15 20.5M19 18l8.5 12" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M31.5 5.6l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8z" fill="#fff"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="bg" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i><i class="orb o4"></i></div>
+
+<div class="app">
+  <header class="top">
+    <div class="wrap">
+      <div class="top-in">
+        <div class="brand">
+          <svg class="mark" aria-hidden="true"><use href="#kmark"/></svg>
+          <span class="word">KAITO</span><span class="ai">AI</span>
+        </div>
+        <div class="top-r">
+          <span class="status" id="status" data-s="wait"><i></i><span id="statusText">Connexion</span></span>
+          <button class="ghost" id="newBtn" type="button">Nouveau</button>
+        </div>
+      </div>
+      <div class="modes" id="modes" role="group" aria-label="Choisis un mode"></div>
+    </div>
+  </header>
+
+  <main class="wrap main">
+    <section class="welcome" id="welcome">
+      <p class="eyebrow">Assistant IA en français</p>
+      <h1>Une IA pour <span class="grad">tout</span>.</h1>
+      <p class="lead">Roblox Studio, maths, histoires, code, devoirs. Pose ta question : KAITO réfléchit avant de répondre.</p>
+      <ul class="feats">
+        <li style="--c:#4f9dff"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg></span><div><b>Réfléchit d'abord</b><span>Trois niveaux : rapide, réfléchi, profond.</span></div></li>
+        <li style="--c:#ff5d73"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 5l-4 14"/></svg></span><div><b>Luau prêt à coller</b><span>Scripts Roblox Studio, avec où les placer.</span></div></li>
+        <li style="--c:#22d3ee"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6H7l6 6-6 6h11"/></svg></span><div><b>Maths pas à pas</b><span>La méthode d'abord, le résultat ensuite.</span></div></li>
+        <li style="--c:#b784ff"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h6a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H4zM20 5h-6a3 3 0 0 0-3 3v11a2 2 0 0 1 2-2h7z"/></svg></span><div><b>Histoires sur mesure</b><span>Personnages, dialogues, rebondissements.</span></div></li>
+      </ul>
+      <h2 class="sect">Pour commencer <em id="modeName">Général</em></h2>
+      <div class="starters" id="starters"></div>
+      <p class="consent">Au premier message, une fenêtre te demande d'autoriser l'IA. Accepte pour discuter avec KAITO.</p>
+    </section>
+    <div class="log" id="log" role="log" aria-live="off"></div>
+    <div id="end"></div>
+  </main>
+
+  <div class="composer" id="composer">
+    <div class="wrap">
+      <div class="depth-row">
+        <div class="depth" id="depth" role="radiogroup" aria-label="Niveau de réflexion"></div>
+        <span class="hint" id="hint"></span>
+      </div>
+      <div class="field">
+        <textarea id="box" rows="1" maxlength="8000" aria-label="Ton message" placeholder="Pose-moi n'importe quelle question…"></textarea>
+        <button class="send" id="sendBtn" type="button" aria-label="Envoyer"></button>
+      </div>
+      <p class="fine">KAITO peut se tromper : vérifie les infos importantes. Propulsé par Claude.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s) { return document.querySelector(s); };
+
+  var MODES = [
+    { id: 'general', label: 'Général', color: '#4f9dff', ph: "Pose-moi n'importe quelle question…",
+      focus: "Aide générale : réponds à tout, explique simplement, donne des exemples concrets.",
+      starters: [
+        ['Science', "Explique-moi comment fonctionne un trou noir"],
+        ['Organisation', "Aide-moi à organiser ma semaine de révisions"],
+        ['Santé', "Donne-moi 5 conseils pour mieux dormir"],
+        ['Culture', "Raconte-moi un fait surprenant sur l'espace"]
+      ] },
+    { id: 'roblox', label: 'Roblox Studio', color: '#ff5d73', ph: "Décris le script ou le jeu Roblox que tu veux…",
+      focus: "Roblox Studio en français : Luau, scripts, interfaces (ScreenGui), RemoteEvents, DataStore, builds, optimisation, monétisation (Game Passes, Developer Products).",
+      starters: [
+        ['Obby', "Crée un script de checkpoints pour mon obby"],
+        ['DataStore', "Sauvegarde les pièces du joueur avec un DataStore"],
+        ['Gameplay', "Fais un dash avec la touche Shift"],
+        ['Monétisation', "Comment vendre un Game Pass dans mon jeu ?"]
+      ] },
+    { id: 'maths', label: 'Maths', color: '#22d3ee', ph: "Écris ton exercice ou ta question de maths…",
+      focus: "Mathématiques : méthode étape par étape, vérification du résultat, exercices d'entraînement si on le demande.",
+      starters: [
+        ['Algèbre', "Résous 2x² − 5x − 3 = 0 étape par étape"],
+        ['Géométrie', "Explique le théorème de Pythagore avec un exemple"],
+        ['Pourcentages', "Comment calculer une réduction de 30 % sur 49 € ?"],
+        ['Fractions', "Donne-moi 5 exercices de fractions avec correction"]
+      ] },
+    { id: 'histoires', label: 'Histoires', color: '#b784ff', ph: "Donne-moi une idée, je t'écris l'histoire…",
+      focus: "Écriture créative : histoires, personnages, dialogues, univers, suites et fins surprenantes.",
+      starters: [
+        ['Science-fiction', "Écris le début d'une histoire de pirates dans l'espace"],
+        ['Personnage', "Invente un héros avec un pouvoir vraiment bizarre"],
+        ['Suite', "Continue mon histoire. Voici le début :"],
+        ['Twist', "Donne-moi 3 fins surprenantes pour un conte"]
+      ] },
+    { id: 'code', label: 'Code', color: '#34e0a1', ph: "Colle ton code ou décris ce que tu veux coder…",
+      focus: "Programmation : Python, JavaScript, HTML/CSS, explications simples et code commenté.",
+      starters: [
+        ['Python', "Explique-moi les boucles en Python avec des exemples"],
+        ['Web', "Fais une page HTML avec un bouton qui change de couleur"],
+        ['Bug', "Pourquoi mon code affiche undefined ?"],
+        ['JavaScript', "Quelle différence entre let et const ?"]
+      ] },
+    { id: 'ecole', label: 'École', color: '#ffc24b', ph: "Quelle matière ? Quel devoir ?",
+      focus: "Aide aux devoirs : fiches de révision, résumés, corrections de textes, explications claires par matière.",
+      starters: [
+        ['Histoire', "Fais-moi une fiche de révision sur la Révolution française"],
+        ['Français', "Corrige les fautes de ce texte :"],
+        ['Exposé', "Aide-moi à préparer un exposé sur le climat"],
+        ['Résumé', "Résume-moi la photosynthèse en 10 lignes"]
+      ] },
+    { id: 'idees', label: 'Idées', color: '#f472b6', ph: "De quoi as-tu besoin comme idées ?",
+      focus: "Brainstorming : idées de jeux, de projets, de noms, de vidéos ; propose plusieurs pistes.",
+      starters: [
+        ['Jeux', "Donne-moi 10 idées de jeux Roblox originales"],
+        ['Nom', "Trouve un nom de chaîne YouTube gaming"],
+        ['Projet', "Quel petit projet de code pour débuter ?"],
+        ['Site', "Comment lancer mon premier site web ?"]
+      ] }
+  ];
+  var DEPTHS = [
+    { id: 'fast', label: 'Rapide', tier: 'quick', hint: 'Réponses instantanées', think: 'KAITO répond' },
+    { id: 'balanced', label: 'Réfléchi', tier: 'default', hint: 'Le bon équilibre', think: 'KAITO réfléchit' },
+    { id: 'deep', label: 'Profond', tier: 'complex', hint: 'Pour les problèmes difficiles', think: 'KAITO réfléchit en profondeur' }
+  ];
+
+  var LS = 'kaito-ai-v1';
+  var els = {
+    modes: $('#modes'), starters: $('#starters'), welcome: $('#welcome'), log: $('#log'), end: $('#end'),
+    depth: $('#depth'), hint: $('#hint'), box: $('#box'), send: $('#sendBtn'), modeName: $('#modeName'),
+    status: $('#status'), statusText: $('#statusText'), newBtn: $('#newBtn'), composer: $('#composer')
+  };
+  var ICON_SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  var ICON_STOP = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="3"/></svg>';
+  var MARK = '<svg class="mark" aria-hidden="true"><use href="#kmark"/></svg>';
+
+  var modeId = 'general', depthId = 'balanced', turns = [];
+  var sample = null, busy = false, blocked = false, ctl = null, armed = null;
+  var raws = new WeakMap();
+
+  function getMode() { return MODES.filter(function (m) { return m.id === modeId; })[0] || MODES[0]; }
+  function getDepth() { return DEPTHS.filter(function (d) { return d.id === depthId; })[0] || DEPTHS[1]; }
+
+  /* Mémoire locale (confort de ce navigateur uniquement) */
+  function load() {
+    try { var j = JSON.parse(localStorage.getItem(LS) || 'null'); return j && typeof j === 'object' ? j : {}; } catch (_) { return {}; }
+  }
+  function persist() {
+    try { localStorage.setItem(LS, JSON.stringify({ mode: modeId, depth: depthId, turns: turns.slice(-40) })); } catch (_) {}
+  }
+
+  /* Texte → HTML sûr */
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function fmt(s) {
+    return s.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:!?]|$)/g, '$1<em>$2</em>');
+  }
+  function inline(raw) {
+    return raw.split(/(`[^`]+`)/g).map(function (p, i) {
+      return i % 2 ? '<code>' + esc(p.slice(1, -1)) + '</code>' : fmt(esc(p));
+    }).join('');
+  }
+  var KW = new Set(('local function end if then else elseif for while do return in and or not nil true false break continue repeat until ' +
+    'const let var def class import from export async await new this self None True False try except catch finally with as yield switch case default').split(' '));
+  var RE_BASE = /(--\[\[[\s\S]*?\]\]|--[^\n]*|\/\/[^\n]*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)/g;
+  var RE_HASH = /(#[^\n]*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)/g;
+  function hl(code, lang) {
+    if (/^(html|css|xml|json|text|txt|md|markdown)$/i.test(lang)) return esc(code);
+    var re = /^(py|python|bash|sh|shell|yaml|yml)$/i.test(lang) ? RE_HASH : RE_BASE;
+    re.lastIndex = 0;
+    var out = '', last = 0, m;
+    while ((m = re.exec(code))) {
+      out += esc(code.slice(last, m.index));
+      last = re.lastIndex;
+      if (m[1]) out += '<span class="t-c">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="t-s">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="t-n">' + m[3] + '</span>';
+      else if (KW.has(m[4])) out += '<span class="t-k">' + m[4] + '</span>';
+      else if (code.charAt(last) === '(') out += '<span class="t-f">' + m[4] + '</span>';
+      else out += m[4];
+      if (m[0].length === 0) re.lastIndex++;
+    }
+    return out + esc(code.slice(last));
+  }
+  function codeBlock(lang, code) {
+    var label = /^luau?$/i.test(lang) ? 'Luau' : (lang || 'code');
+    return '<div class="code"><div class="code-head"><span>' + esc(label) + '</span><button type="button" class="mini copy-code">Copier</button></div><pre><code>' + hl(code, lang || '') + '</code></pre></div>';
+  }
+  function md(src) {
+    var lines = src.replace(/\r/g, '').split('\n'), html = '', i = 0, para = [], list = null, m;
+    function flushPara() { if (para.length) { html += '<p>' + inline(para.join(' ')) + '</p>'; para = []; } }
+    function flushList() {
+      if (list) { html += '<' + list.t + '>' + list.items.map(function (x) { return '<li>' + inline(x) + '</li>'; }).join('') + '</' + list.t + '>'; list = null; }
+    }
+    while (i < lines.length) {
+      var ln = lines[i];
+      var fence = ln.match(/^```\s*([\w+-]*)/);
+      if (fence) {
+        flushPara(); flushList();
+        var buf = []; i++;
+        while (i < lines.length && !/^```/.test(lines[i])) { buf.push(lines[i]); i++; }
+        i++;
+        html += codeBlock(fence[1], buf.join('\n'));
+        continue;
+      }
+      if (/^\s*(-{3,}|\*{3,})\s*$/.test(ln)) { flushPara(); flushList(); html += '<hr>'; }
+      else if ((m = ln.match(/^(#{1,4})\s+(.*)$/))) { flushPara(); flushList(); var n = m[1].length + 1; html += '<h' + n + '>' + inline(m[2]) + '</h' + n + '>'; }
+      else if ((m = ln.match(/^\s*[-*•]\s+(.*)$/))) { flushPara(); if (!list || list.t !== 'ul') { flushList(); list = { t: 'ul', items: [] }; } list.items.push(m[1]); }
+      else if ((m = ln.match(/^\s*\d+[.)]\s+(.*)$/))) { flushPara(); if (!list || list.t !== 'ol') { flushList(); list = { t: 'ol', items: [] }; } list.items.push(m[1]); }
+      else if ((m = ln.match(/^>\s?(.*)$/))) { flushPara(); flushList(); html += '<blockquote>' + inline(m[1]) + '</blockquote>'; }
+      else if (!ln.trim()) { flushPara(); flushList(); }
+      else { flushList(); para.push(ln.trim()); }
+      i++;
+    }
+    flushPara(); flushList();
+    return html;
+  }
+
+  async function copyText(t) {
+    try { await navigator.clipboard.writeText(t); return true; } catch (_) {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = t; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+        document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand('copy'); ta.remove(); return ok;
+      } catch (__) { return false; }
+    }
+  }
+  function flash(btn, ok) {
+    var old = btn.dataset.label || btn.textContent;
+    btn.dataset.label = old;
+    btn.textContent = ok ? 'Copié' : 'Échec';
+    setTimeout(function () { btn.textContent = old; }, 1400);
+  }
+
+  /* Interface */
+  function setMode(id, fromUser) {
+    var changed = id !== modeId;
+    modeId = id;
+    var m = getMode();
+    document.documentElement.style.setProperty('--mode', m.color);
+    Array.prototype.forEach.call(els.modes.children, function (c) { c.setAttribute('aria-pressed', c.dataset.id === id ? 'true' : 'false'); });
+    els.modeName.textContent = m.label;
+    els.box.placeholder = m.ph;
+    els.starters.innerHTML = '';
+    m.starters.forEach(function (s) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'st';
+      b.innerHTML = '<span class="st-tag"></span><span class="st-txt"></span>';
+      b.firstChild.textContent = s[0]; b.lastChild.textContent = s[1];
+      b.addEventListener('click', function () {
+        if (/:$/.test(s[1])) { els.box.value = s[1] + ' '; resize(); els.box.focus(); } else send(s[1]);
+      });
+      els.starters.appendChild(b);
+    });
+    if (fromUser && changed && log.children.length) {
+      var d = document.createElement('div'); d.className = 'divider';
+      d.innerHTML = 'Mode <span></span>'; d.lastChild.textContent = m.label;
+      els.log.appendChild(d); follow(true);
+    }
+    persist();
+  }
+  var log = els.log;
+  function buildModes() {
+    MODES.forEach(function (m) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.dataset.id = m.id; b.style.setProperty('--c', m.color);
+      b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = '<i></i><span></span>'; b.lastChild.textContent = m.label;
+      b.addEventListener('click', function () { setMode(m.id, true); });
+      els.modes.appendChild(b);
+    });
+  }
+  function setDepth(id) {
+    depthId = id;
+    Array.prototype.forEach.call(els.depth.children, function (c) { c.setAttribute('aria-checked', c.dataset.id === id ? 'true' : 'false'); });
+    els.hint.textContent = getDepth().hint;
+    persist();
+  }
+  function buildDepths() {
+    DEPTHS.forEach(function (d) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.dataset.id = d.id; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
+      b.textContent = d.label;
+      b.addEventListener('click', function () { setDepth(d.id); });
+      els.depth.appendChild(b);
+    });
+  }
+  function setUI() {
+    els.send.innerHTML = busy ? ICON_STOP : ICON_SEND;
+    els.send.setAttribute('aria-label', busy ? 'Arrêter la réponse' : 'Envoyer');
+    els.send.disabled = blocked;
+    els.box.disabled = blocked;
+    els.welcome.hidden = turns.length > 0 || log.children.length > 0;
+  }
+  function setStatus(s, t) { els.status.dataset.s = s; els.statusText.textContent = t; }
+  function resize() { els.box.style.height = 'auto'; els.box.style.height = Math.min(els.box.scrollHeight, 160) + 'px'; }
+  function nearBottom() { var d = document.scrollingElement || document.documentElement; return d.scrollHeight - (d.scrollTop + window.innerHeight) < 200; }
+  function follow(force) { if (force || nearBottom()) els.end.scrollIntoView({ block: 'end' }); }
+
+  function addUser(text) {
+    var row = document.createElement('div'); row.className = 'msg user';
+    var b = document.createElement('div'); b.className = 'bubble'; b.textContent = text;
+    row.appendChild(b); log.appendChild(row); return row;
+  }
+  function addAI() {
+    var row = document.createElement('div'); row.className = 'msg ai';
+    row.innerHTML = '<div class="av">' + MARK + '</div><div class="ai-body"><div class="prose"></div><div class="tools" hidden></div></div>';
+    log.appendChild(row); return row;
+  }
+  function renderAI(row, text, state) {
+    var prose = row.querySelector('.prose'), tools = row.querySelector('.tools');
+    if (state === 'think') {
+      prose.innerHTML = '<div class="think"><i></i><i></i><i></i><span></span></div>';
+      prose.querySelector('span').textContent = getDepth().think + '…';
+      return;
+    }
+    prose.innerHTML = md(text);
+    if (state === 'done') {
+      raws.set(row, text);
+      tools.hidden = false;
+      tools.innerHTML = '<button type="button" class="mini copy-msg">Copier la réponse</button>';
+    }
+  }
+  function note(row, text) {
+    var n = document.createElement('div'); n.className = 'note'; n.textContent = text;
+    row.querySelector('.ai-body').appendChild(n);
+  }
+  function addNotice(text, opts) {
+    opts = opts || {};
+    var n = document.createElement('div'); n.className = 'notice' + (opts.err ? ' err' : '');
+    var s = document.createElement('span'); s.textContent = text; n.appendChild(s);
+    if (opts.retry) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'mini retry'; b.textContent = 'Réessayer';
+      n.appendChild(b);
+    }
+    log.appendChild(n); follow(true); return n;
+  }
+
+  /* Appel à l'IA */
+  function persona() {
+    var m = getMode();
+    return [
+      "Tu es KAITO AI, une IA généraliste créée pour le site KAITO AI. Tu aides sur tout : Roblox Studio et Luau, mathématiques, écriture d'histoires, programmation, devoirs, idées de projets, culture générale. Ton public est surtout jeune : reste adapté, sans contenu sexuel ni violence explicite.",
+      "",
+      "Règles :",
+      "- Réponds en français, sauf si la personne écrit dans une autre langue.",
+      "- Réfléchis avant de répondre, vérifie tes calculs et ton code, et dis-le franchement quand tu n'es pas sûr.",
+      "- Sois clair, chaleureux et direct : la réponse d'abord, puis les détails utiles. Pas de remplissage.",
+      "- Utilise un Markdown simple : titres courts (##), listes, **gras**, et des blocs de code Markdown avec le nom du langage (luau, python, javascript, html). N'utilise jamais de tableau Markdown ni de LaTeX : écris les maths en texte simple (x², √16, 3/4, ×, ÷).",
+      "- Maths : montre la méthode étape par étape, puis le résultat final, puis une vérification rapide.",
+      "- Roblox Studio : donne du Luau propre et actuel, indique OÙ placer chaque script (ServerScriptService, StarterPlayerScripts, ReplicatedStorage, StarterGui…) et comment le tester dans Studio. Valide toujours côté serveur ce qui vient du client (RemoteEvents) et protège les DataStore avec pcall.",
+      "- Histoires : style vivant, personnages attachants, dialogues naturels, et propose la suite à la fin.",
+      "- Si une demande est dangereuse ou illégale, refuse gentiment et propose une alternative utile.",
+      "- Si on te demande qui tu es : tu es KAITO AI, une IA propulsée par Claude, d'Anthropic.",
+      "- Tu ne vois que le texte de cette conversation : tu ne peux ni naviguer sur internet ni ouvrir des fichiers.",
+      "",
+      "Mode actuel : " + m.label + ". " + m.focus
+    ].join('\n');
+  }
+  function buildInput() {
+    var keep = turns.slice(-20);
+    while (keep.length && keep[0].role !== 'user') keep.shift();
+    return [{ role: 'user', content: persona() }].concat(keep);
+  }
+
+  async function ask() {
+    busy = true; setUI();
+    var row = addAI(); row.classList.add('pending');
+    renderAI(row, '', 'think'); follow(true);
+    ctl = new AbortController();
+    var my = ctl, got = false;
+    try {
+      await ready;
+      if (!sample) throw { code: 'unavailable' };
+      var r = await sample(buildInput(), {
+        cache: false, signal: my.signal, modelTier: getDepth().tier,
+        onText: function (u) { got = true; renderAI(row, u.text, 'stream'); follow(); }
+      });
+      row.classList.remove('pending');
+      turns.push({ role: 'assistant', content: r.text });
+      renderAI(row, r.text, 'done');
+      if (r.truncated) note(row, 'La réponse a été coupée. Écris « continue » pour la suite.');
+    } catch (e) {
+      fail(row, e || {}, got);
+    } finally {
+      busy = false; ctl = null; setUI(); persist();
+    }
+  }
+  function fail(row, e, got) {
+    var code = e.code || 'upstream_error', part = e.text;
+    row.classList.remove('pending');
+    if (code === 'cancelled') {
+      if (part) { turns.push({ role: 'assistant', content: part }); renderAI(row, part, 'done'); note(row, 'Réponse arrêtée.'); }
+      else row.remove();
+      return;
+    }
+    if (code === 'refused') { row.remove(); addNotice("KAITO ne peut pas répondre à cette demande. Essaie de la reformuler.", { err: true }); return; }
+    if (code === 'unavailable' || code === 'sampling_disabled' || code === 'not_declared' || code === 'capability_disabled' || code === 'capability_removed') {
+      row.remove(); lock("L'IA n'est pas disponible ici. Ouvre KAITO AI depuis claude.ai ou l'app Claude."); return;
+    }
+    if (code === 'not_granted') {
+      row.remove(); lock("Tu as refusé l'accès à l'IA. Recharge la page et accepte la demande pour discuter avec KAITO."); return;
+    }
+    if (part) { renderAI(row, part, 'stream'); row.classList.add('failed'); note(row, 'Réponse interrompue.'); } else row.remove();
+    if (!part) row.classList.remove('failed');
+    var msgs = {
+      rate_limited: "Trop de demandes d'un coup, ou limite d'usage atteinte. Attends un moment puis réessaie.",
+      session_expired: "Ta session a expiré. Reconnecte-toi à Claude, puis recharge la page.",
+      prompt_too_large: "La conversation est trop longue. Lance une nouvelle conversation avec « Nouveau ».",
+      empty_completion: "KAITO n'a rien répondu. Reformule ta question plus simplement."
+    };
+    addNotice(msgs[code] || "La connexion a été coupée. Réessaie dans un instant.", { err: true, retry: code !== 'prompt_too_large' && code !== 'session_expired' });
+  }
+  function lock(text) {
+    blocked = true; setStatus('off', 'Indisponible');
+    els.box.placeholder = 'IA indisponible';
+    addNotice(text, { err: true });
+  }
+  function send(text) {
+    text = (text || '').trim();
+    if (!text || busy || blocked) return;
+    turns.push({ role: 'user', content: text });
+    addUser(text);
+    els.box.value = ''; resize();
+    els.welcome.hidden = true;
+    ask();
+  }
+  function newChat() {
+    if (!turns.length && !log.children.length) { window.scrollTo(0, 0); return; }
+    if (!armed) {
+      els.newBtn.textContent = 'Effacer ?';
+      armed = setTimeout(function () { armed = null; els.newBtn.textContent = 'Nouveau'; }, 3000);
+      return;
+    }
+    clearTimeout(armed); armed = null; els.newBtn.textContent = 'Nouveau';
+    if (ctl) ctl.abort();
+    turns = []; log.innerHTML = '';
+    persist(); setUI(); window.scrollTo(0, 0);
+  }
+
+  /* Événements */
+  els.send.addEventListener('click', function () { if (busy) { if (ctl) ctl.abort(); } else send(els.box.value); });
+  els.box.addEventListener('input', resize);
+  els.box.addEventListener('keydown', function (e) {
+    var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    if (e.key === 'Enter' && !e.shiftKey && !touch && !e.isComposing) { e.preventDefault(); if (!busy) send(els.box.value); }
+  });
+  els.newBtn.addEventListener('click', newChat);
+  log.addEventListener('click', async function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    if (t.classList.contains('copy-code')) {
+      flash(t, await copyText(t.closest('.code').querySelector('code').textContent));
+    } else if (t.classList.contains('copy-msg')) {
+      flash(t, await copyText(raws.get(t.closest('.msg')) || ''));
+    } else if (t.classList.contains('retry') && !busy) {
+      var n = t.closest('.notice'); if (n) n.remove();
+      var f = log.querySelector('.msg.failed'); if (f) f.remove();
+      ask();
+    }
+  });
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () { document.documentElement.style.setProperty('--comp-h', els.composer.offsetHeight + 'px'); }).observe(els.composer);
+  }
+
+  /* Démarrage */
+  var ready = (async function () {
+    try { sample = window.claude && window.claude.use ? await window.claude.use('sample') : null; } catch (_) { sample = null; }
+    if (sample) setStatus('ok', 'En ligne');
+    else { setStatus('off', 'Hors ligne'); lock("L'IA n'est pas disponible ici. Ouvre KAITO AI depuis claude.ai ou l'app Claude."); }
+  })();
+
+  buildModes(); buildDepths();
+  var saved = load();
+  if (Array.isArray(saved.turns)) {
+    turns = saved.turns.filter(function (t) { return t && (t.role === 'user' || t.role === 'assistant') && typeof t.content === 'string' && t.content; });
+  }
+  setDepth(DEPTHS.some(function (d) { return d.id === saved.depth; }) ? saved.depth : 'balanced');
+  setMode(MODES.some(function (m) { return m.id === saved.mode; }) ? saved.mode : 'general', false);
+  turns.forEach(function (t) {
+    if (t.role === 'user') addUser(t.content);
+    else { var r = addAI(); renderAI(r, t.content, 'done'); }
+  });
+  setUI();
+})();
+</script>
+
+</body></html>
